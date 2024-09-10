@@ -13,31 +13,18 @@ type ApiError struct {
 	Error string
 }
 
-type apiFunc func(w http.ResponseWriter, r *http.Request) error
-
-func makeHttpHandler(f apiFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := f(w, r); err != nil {
-			writeJson(w, http.StatusBadRequest, ApiError{Error: err.Error()})
-		}
-	}
-}
-
-func writeJson(w http.ResponseWriter, status int, data any) error {
-	w.WriteHeader(status)
-	w.Header().Set("Content-type", "application/json")
-	return json.NewEncoder(w).Encode(data)
-
-}
+// we use flow chart to represent it
 
 type APIserver struct {
 	listenAdd string
+	store     storage
 	// db connection string to be added
 }
 
-func newAPIserver(address string) *APIserver {
+func newAPIserver(address string, store storage) *APIserver {
 	return &APIserver{
 		listenAdd: address,
+		store:     store,
 	}
 
 }
@@ -83,4 +70,23 @@ func (s *APIserver) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 }
 func (s *APIserver) handleTransfer(w http.ResponseWriter, r *http.Request) error {
 	return nil
+}
+
+// Helper functions
+
+type apiFunc func(w http.ResponseWriter, r *http.Request) error
+
+func makeHttpHandler(f apiFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := f(w, r); err != nil {
+			writeJson(w, http.StatusBadRequest, ApiError{Error: err.Error()})
+		}
+	}
+}
+
+func writeJson(w http.ResponseWriter, status int, data any) error {
+	w.Header().Add("Content-type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(data)
+
 }
